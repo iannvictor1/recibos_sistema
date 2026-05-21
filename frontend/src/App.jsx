@@ -3,43 +3,49 @@ import axios from "axios";
 import "./App.css";
 import * as XLSX from "xlsx";
 
+const API = import.meta.env.VITE_API_URL;
+
+const formInicial = {
+  valor: "",
+  pagador: "",
+  referente: "",
+  emissor: "",
+  cidade: "",
+  data_pagamento: "",
+  forma_pagamento: "dinheiro",
+
+  chave_pix: "",
+  banco_pix: "",
+  recebedor_pix: "",
+
+  numero_cheque: "",
+  agencia_cheque: "",
+  banco_cheque: "",
+
+  conta_transferencia: "",
+  agencia_transferencia: "",
+  banco_transferencia: "",
+  favorecido_transferencia: "",
+
+  banco_boleto: "",
+  numero_boleto: "",
+};
+
 function App() {
-  const [formData, setFormData] = useState({
-    valor: "",
-    pagador: "",
-    referente: "",
-    emissor: "",
-    cidade: "",
-    data_pagamento: "",
-    forma_pagamento: "dinheiro",
-
-    chave_pix: "",
-    banco_pix: "",
-    recebedor_pix: "",
-
-    numero_cheque: "",
-    agencia_cheque: "",
-    banco_cheque: "",
-
-    conta_transferencia: "",
-    agencia_transferencia: "",
-    banco_transferencia: "",
-    favorecido_transferencia: "",
-
-    banco_boleto: "",
-    numero_boleto: "",
-  });
-
+  const [formData, setFormData] = useState(formInicial);
   const [reciboId, setReciboId] = useState(null);
   const [recibos, setRecibos] = useState([]);
   const [ultimoRecibo, setUltimoRecibo] = useState(null);
   const [pagina, setPagina] = useState("gerar");
+  const [menuAberto, setMenuAberto] = useState(null);
+  const [editandoId, setEditandoId] = useState(null);
+
   const [filtros, setFiltros] = useState({
-  pagador: "",
-  dataInicio: "",
-  dataFim: "",
-  formaPagamento: "",
-});
+    pagador: "",
+    dataInicio: "",
+    dataFim: "",
+    formaPagamento: "",
+  });
 
   useEffect(() => {
     carregarRecibos();
@@ -47,7 +53,7 @@ function App() {
 
   async function carregarRecibos() {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/recibos/");
+      const response = await axios.get(`${API}/api/recibos/`);
       setRecibos(response.data);
     } catch (error) {
       console.error("Erro ao carregar recibos:", error);
@@ -55,10 +61,10 @@ function App() {
   }
 
   function handleFiltroChange(e) {
-  setFiltros({
-    ...filtros,
-    [e.target.name]: e.target.value,
-  });
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value,
+    });
   }
 
   function handleChange(e) {
@@ -72,39 +78,40 @@ function App() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/recibos/",
-        formData
-      );
+      const url = editandoId
+        ? `${API}/api/recibos/${editandoId}/`
+        : `${API}/api/recibos/`;
 
-      alert("Recibo criado com sucesso!");
+      const response = editandoId
+        ? await axios.put(url, formData)
+        : await axios.post(url, formData);
+
+      alert(editandoId ? "Recibo atualizado com sucesso!" : "Recibo criado com sucesso!");
+
       setReciboId(response.data.id);
       setUltimoRecibo(response.data);
+      setEditandoId(null);
+      setFormData(formInicial);
       carregarRecibos();
     } catch (error) {
-      console.error("Erro ao criar recibo:", error);
-      alert("Erro ao criar recibo");
+      console.error("Erro ao salvar recibo:", error);
+      alert("Erro ao salvar recibo");
     }
-}
+  }
 
   function abrirPDF(id) {
-    window.open(`http://127.0.0.1:8000/api/recibos/${id}/pdf/`, "_blank");
+    window.open(`${API}/api/recibos/${id}/pdf/`, "_blank");
   }
 
   function enviarWhatsApp(recibo) {
     const numeroPadrao = "85984281819";
 
-    const telefone = prompt(
-      "Confirme ou altere o WhatsApp com DDD:",
-      numeroPadrao
-    );
+    const telefone = prompt("Confirme ou altere o WhatsApp com DDD:", numeroPadrao);
 
     if (!telefone) return;
 
     const telefoneLimpo = telefone.replace(/\D/g, "");
-    const ipServidor = "192.168.1.220";
-
-    const linkPDF = `http://${ipServidor}:8000/api/recibos/${recibo.id}/pdf/`;
+    const linkPDF = `${API}/api/recibos/${recibo.id}/pdf/`;
 
     const mensagem = `Olá! Segue o recibo de pagamento.
 
@@ -115,30 +122,54 @@ Data: ${recibo.data_pagamento}
 PDF:
 ${linkPDF}`;
 
-    const url = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(
-      mensagem
-    )}`;
+    const url = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
 
     window.open(url, "_blank");
   }
 
+  function editarRecibo(recibo) {
+    setFormData({
+      ...formInicial,
+      ...recibo,
+    });
+    setEditandoId(recibo.id);
+    setPagina("gerar");
+    setMenuAberto(null);
+  }
+
+  async function excluirRecibo(id) {
+    const confirmar = confirm("Deseja realmente excluir este recibo?");
+
+    if (!confirmar) return;
+
+    try {
+      await axios.delete(`${API}/api/recibos/${id}/`);
+      carregarRecibos();
+      setMenuAberto(null);
+      alert("Recibo excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir recibo:", error);
+      alert("Erro ao excluir recibo");
+    }
+  }
+
   const recibosFiltrados = recibos.filter((recibo) => {
-  const porPagador = recibo.pagador
-    .toLowerCase()
-    .includes(filtros.pagador.toLowerCase());
+    const porPagador = recibo.pagador
+      .toLowerCase()
+      .includes(filtros.pagador.toLowerCase());
 
-  const porForma =
-    !filtros.formaPagamento ||
-    recibo.forma_pagamento === filtros.formaPagamento;
+    const porForma =
+      !filtros.formaPagamento ||
+      recibo.forma_pagamento === filtros.formaPagamento;
 
-  const porDataInicio =
-    !filtros.dataInicio || recibo.data_pagamento >= filtros.dataInicio;
+    const porDataInicio =
+      !filtros.dataInicio || recibo.data_pagamento >= filtros.dataInicio;
 
-  const porDataFim =
-    !filtros.dataFim || recibo.data_pagamento <= filtros.dataFim;
+    const porDataFim =
+      !filtros.dataFim || recibo.data_pagamento <= filtros.dataFim;
 
-  return porPagador && porForma && porDataInicio && porDataFim;
-});
+    return porPagador && porForma && porDataInicio && porDataFim;
+  });
 
   function exportarPlanilha() {
     const dados = recibosFiltrados.map((recibo) => ({
@@ -164,13 +195,12 @@ ${linkPDF}`;
       "Número boleto": recibo.numero_boleto,
     }));
 
-  const worksheet = XLSX.utils.json_to_sheet(dados);
-  const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(dados);
+    const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Recibos");
-
-  XLSX.writeFile(workbook, "historico-recibos.xlsx");
-}
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Recibos");
+    XLSX.writeFile(workbook, "historico-recibos.xlsx");
+  }
 
   return (
     <div className="layout">
@@ -178,14 +208,13 @@ ${linkPDF}`;
         <h2>Recibos</h2>
 
         <button onClick={() => setPagina("gerar")}>Gerar Recibo</button>
-
         <button onClick={() => setPagina("historico")}>Histórico</button>
       </aside>
 
       <main className="main">
         {pagina === "gerar" && (
           <div className="container">
-            <h1>RECIBO SIMPLES</h1>
+            <h1>{editandoId ? "EDITAR RECIBO" : "RECIBO SIMPLES"}</h1>
 
             <form onSubmit={handleSubmit} className="formulario">
               <input
@@ -212,17 +241,11 @@ ${linkPDF}`;
                 onChange={handleChange}
               />
 
-              <select
-                name="emissor"
-                value={formData.emissor}
-                onChange={handleChange}
-              >
+              <select name="emissor" value={formData.emissor} onChange={handleChange}>
                 <option value="">Selecione o emissor</option>
-
                 <option value="C&M DISTRIBUIDORA DE CARNES LTDA-ME">
                   C&M DISTRIBUIDORA DE CARNES LTDA-ME
                 </option>
-
                 <option value="OUTRO">Outro</option>
               </select>
 
@@ -265,149 +288,77 @@ ${linkPDF}`;
 
               {formData.forma_pagamento === "pix" && (
                 <div className="extra-fields">
-                  <input
-                    type="text"
-                    name="recebedor_pix"
-                    placeholder="Quem recebeu?"
-                    value={formData.recebedor_pix}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="banco_pix"
-                    placeholder="Instituição/Banco"
-                    value={formData.banco_pix}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="chave_pix"
-                    placeholder="Chave PIX"
-                    value={formData.chave_pix}
-                    onChange={handleChange}
-                  />
+                  <input type="text" name="recebedor_pix" placeholder="Quem recebeu?" value={formData.recebedor_pix || ""} onChange={handleChange} />
+                  <input type="text" name="banco_pix" placeholder="Instituição/Banco" value={formData.banco_pix || ""} onChange={handleChange} />
+                  <input type="text" name="chave_pix" placeholder="Chave PIX" value={formData.chave_pix || ""} onChange={handleChange} />
                 </div>
               )}
 
               {formData.forma_pagamento === "cheque" && (
                 <div className="extra-fields">
-                  <input
-                    type="text"
-                    name="numero_cheque"
-                    placeholder="Número do cheque"
-                    value={formData.numero_cheque}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="banco_cheque"
-                    placeholder="Banco"
-                    value={formData.banco_cheque}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="agencia_cheque"
-                    placeholder="Agência"
-                    value={formData.agencia_cheque}
-                    onChange={handleChange}
-                  />
+                  <input type="text" name="numero_cheque" placeholder="Número do cheque" value={formData.numero_cheque || ""} onChange={handleChange} />
+                  <input type="text" name="banco_cheque" placeholder="Banco" value={formData.banco_cheque || ""} onChange={handleChange} />
+                  <input type="text" name="agencia_cheque" placeholder="Agência" value={formData.agencia_cheque || ""} onChange={handleChange} />
                 </div>
               )}
 
               {formData.forma_pagamento === "transferencia" && (
                 <div className="extra-fields">
-                  <input
-                    type="text"
-                    name="conta_transferencia"
-                    placeholder="Conta"
-                    value={formData.conta_transferencia}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="agencia_transferencia"
-                    placeholder="Agência"
-                    value={formData.agencia_transferencia}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="banco_transferencia"
-                    placeholder="Banco"
-                    value={formData.banco_transferencia}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="favorecido_transferencia"
-                    placeholder="Favorecido"
-                    value={formData.favorecido_transferencia}
-                    onChange={handleChange}
-                  />
+                  <input type="text" name="conta_transferencia" placeholder="Conta" value={formData.conta_transferencia || ""} onChange={handleChange} />
+                  <input type="text" name="agencia_transferencia" placeholder="Agência" value={formData.agencia_transferencia || ""} onChange={handleChange} />
+                  <input type="text" name="banco_transferencia" placeholder="Banco" value={formData.banco_transferencia || ""} onChange={handleChange} />
+                  <input type="text" name="favorecido_transferencia" placeholder="Favorecido" value={formData.favorecido_transferencia || ""} onChange={handleChange} />
                 </div>
               )}
 
               {formData.forma_pagamento === "boleto" && (
                 <div className="extra-fields">
-                  <input
-                    type="text"
-                    name="banco_boleto"
-                    placeholder="Banco emissor"
-                    value={formData.banco_boleto}
-                    onChange={handleChange}
-                  />
-
-                  <input
-                    type="text"
-                    name="numero_boleto"
-                    placeholder="Número do boleto"
-                    value={formData.numero_boleto}
-                    onChange={handleChange}
-                  />
+                  <input type="text" name="banco_boleto" placeholder="Banco emissor" value={formData.banco_boleto || ""} onChange={handleChange} />
+                  <input type="text" name="numero_boleto" placeholder="Número do boleto" value={formData.numero_boleto || ""} onChange={handleChange} />
                 </div>
               )}
 
-              <button type="submit">Gerar Recibo</button>
+              <button type="submit">
+                {editandoId ? "Salvar Alterações" : "Gerar Recibo"}
+              </button>
 
-              {reciboId && (
+              {editandoId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditandoId(null);
+                    setFormData(formInicial);
+                  }}
+                >
+                  Cancelar Edição
+                </button>
+              )}
+
+              {reciboId && !editandoId && (
                 <button type="button" onClick={() => abrirPDF(reciboId)}>
                   Abrir último PDF
                 </button>
               )}
             </form>
-            {ultimoRecibo && (
+
+            {ultimoRecibo && !editandoId && (
               <div className="historico">
                 <h2>Último Recibo Gerado</h2>
 
                 <div className="historico-item">
                   <div>
                     <strong>{ultimoRecibo.pagador}</strong>
-
                     <p>
                       R$ {ultimoRecibo.valor} — {ultimoRecibo.data_pagamento}
                     </p>
                   </div>
 
                   <div className="acoes">
-                    <button
-                      type="button"
-                      onClick={() => abrirPDF(ultimoRecibo.id)}
-                    >
+                    <button type="button" onClick={() => abrirPDF(ultimoRecibo.id)}>
                       Abrir PDF
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => enviarWhatsApp(ultimoRecibo)}
-                    >
+                    <button type="button" onClick={() => enviarWhatsApp(ultimoRecibo)}>
                       Enviar WhatsApp
                     </button>
                   </div>
@@ -424,33 +375,11 @@ ${linkPDF}`;
             {recibos.length === 0 && <p>Nenhum recibo cadastrado ainda.</p>}
 
             <div className="filtros">
-              <input
-                type="text"
-                name="pagador"
-                placeholder="Filtrar por pagador"
-                value={filtros.pagador}
-                onChange={handleFiltroChange}
-              />
+              <input type="text" name="pagador" placeholder="Filtrar por pagador" value={filtros.pagador} onChange={handleFiltroChange} />
+              <input type="date" name="dataInicio" value={filtros.dataInicio} onChange={handleFiltroChange} />
+              <input type="date" name="dataFim" value={filtros.dataFim} onChange={handleFiltroChange} />
 
-              <input
-                type="date"
-                name="dataInicio"
-                value={filtros.dataInicio}
-                onChange={handleFiltroChange}
-              />
-
-              <input
-                type="date"
-                name="dataFim"
-                value={filtros.dataFim}
-                onChange={handleFiltroChange}
-              />
-
-              <select
-                name="formaPagamento"
-                value={filtros.formaPagamento}
-                onChange={handleFiltroChange}
-              >
+              <select name="formaPagamento" value={filtros.formaPagamento} onChange={handleFiltroChange}>
                 <option value="">Todas as formas</option>
                 <option value="dinheiro">Dinheiro</option>
                 <option value="pix">Pix</option>
@@ -461,11 +390,7 @@ ${linkPDF}`;
               </select>
             </div>
 
-            <button
-              type="button"
-              className="botao-exportar"
-              onClick={exportarPlanilha}
-            >
+            <button type="button" className="botao-exportar" onClick={exportarPlanilha}>
               Exportar Planilha
             </button>
 
@@ -476,7 +401,7 @@ ${linkPDF}`;
                   <p>
                     R$ {recibo.valor} — {recibo.data_pagamento}
                   </p>
-                </div>      
+                </div>
 
                 <div className="acoes">
                   <button type="button" onClick={() => abrirPDF(recibo.id)}>
@@ -486,6 +411,30 @@ ${linkPDF}`;
                   <button type="button" onClick={() => enviarWhatsApp(recibo)}>
                     Enviar WhatsApp
                   </button>
+
+                  <div className="menu-container">
+                    <button
+                      type="button"
+                      className="botao-menu"
+                      onClick={() =>
+                        setMenuAberto(menuAberto === recibo.id ? null : recibo.id)
+                      }
+                    >
+                      ⋮
+                    </button>
+
+                    {menuAberto === recibo.id && (
+                      <div className="menu-opcoes">
+                        <button type="button" onClick={() => editarRecibo(recibo)}>
+                          Editar
+                        </button>
+
+                        <button type="button" onClick={() => excluirRecibo(recibo.id)}>
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

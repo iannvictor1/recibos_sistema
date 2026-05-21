@@ -175,3 +175,39 @@ button:hover {
   gap: 15px;
   margin-bottom: 25px;
 }
+
+.menu-container {
+  position: relative;
+}
+
+.botao-menu {
+  width: 42px;
+  padding: 10px;
+  font-size: 20px;
+}
+
+.menu-opcoes {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 10;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.menu-opcoes button {
+  width: 100%;
+  background: white;
+  color: #111827;
+  text-align: left;
+  border-radius: 0;
+  padding: 12px;
+}
+
+.menu-opcoes button:hover {
+  background: #f3f4f6;
+}
