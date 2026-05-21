@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px;}
+        .recibo {
+            border: 1px solid #000;
+            padding: 30px;
+            margin: 20px;
+        }
+        h2 { text-align: center;}
+        .valor {
+            float: right;
+            border: 1px solid #000;
+            padding: 8px 14px;
+            font-weight: bold;
+        }
+        .texto {margin-top: 60px; line-height: 1.7; }
+        .data {text-align: right; margin-top: 25px;}
+        .assinatura {
+            margin: 50px auto 0;
+            width: 400px;
+            border-top: 1px solid #888;
+            text-align: center;
+            padding-top: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="recibo">
+        <h2>Recibo de Pagamento</h2>
+
+        <div class="valor">R$ {{ recibo.valor }}</div>
+
+        <div class="texto">
+            Recebi(emos) de <strong>{{ recibo.pagador }}</strong>, a importância de
+            <strong>R$ {{ recibo.valor }}</strong>, referente à
+            <strong>{{ recibo.referente }}</strong>.
+            <br><br>
+            Para maior clareza, firmo(amos) o presente recibo, que comprova o recebimento integral
+            do valor mencionado, concedendo <strong>quitação plena, geral e irrevogável</strong>
+            pela quantia recebida.
+        </div>
+
+        <div class="data">
+            {{ recibo.cidade }}, {{ recibo.data_pagamento }}
+        </div>
+
+        <div class="assinatura">
+            {{ recibo.emissor }}
+        </div>
+    </div>
+</body>
+</html>

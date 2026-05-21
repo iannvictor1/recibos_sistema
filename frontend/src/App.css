@@ -1,0 +1,177 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background: #111827;
+  color: white;
+  padding: 25px;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+}
+
+.sidebar h2 {
+  margin-bottom: 30px;
+}
+
+.sidebar button {
+  width: 100%;
+  margin-bottom: 12px;
+  background: #1f2937;
+  text-align: left;
+}
+
+.sidebar button:hover {
+  background: #2563eb;
+}
+
+.main {
+  position: fixed;
+  left: 220px;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  padding: 40px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  border: none;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 35px;
+  color: #111827;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+  color: #111827;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.botao-exportar {
+  width: fit-content;
+  padding: 14px 22px;
+  margin: 10px auto 25px auto;
+  display: block;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.extra-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.historico {
+  margin-top: 40px;
+}
+
+.historico h2 {
+  margin-bottom: 20px;
+}
+
+.historico-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+
+.historico-item p {
+  margin: 5px 0 0;
+  color: #666;
+}
+
+.historico-item button {
+  width: auto;
+  padding: 10px 14px;
+}
+
+.acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.filtros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 25px;
+}
